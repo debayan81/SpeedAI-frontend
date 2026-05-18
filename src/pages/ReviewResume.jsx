@@ -4,7 +4,7 @@ import { useAuth } from '@clerk/react'
 import { apiCall } from '../lib/api'
 import { useAppUser } from '../context/UserContext'
 
-const RemoveResume = () => {
+const ReviewResume = () => {
     const [file, setFile] = useState(null)
     const [result, setResult] = useState('')
     const [loading, setLoading] = useState(false)
@@ -112,4 +112,4 @@ const RemoveResume = () => {
     )
 }
 
-export default RemoveResume
+export default ReviewResume
