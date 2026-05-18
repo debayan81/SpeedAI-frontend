@@ -2,8 +2,9 @@ import React from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import { useClerk, useUser } from '@clerk/react'
+import { useAppUser } from '../context/UserContext'
 import {
-    Home, SquarePen, Hash, Image, Eraser, Scissors, FileText, LogOut, Users
+    Home, SquarePen, Hash, Image, Eraser, Scissors, FileText, LogOut, Users, Zap
 } from 'lucide-react'
 
 const sidebarLinks = [
@@ -20,7 +21,11 @@ const sidebarLinks = [
 const Layout = () => {
     const navigate = useNavigate();
     const { signOut } = useClerk();
-    const { user } = useUser();
+    const { user: clerkUser } = useUser();
+    const { user: appUser, loading: appLoading } = useAppUser();
+
+    const planLabel = appLoading ? '...' : (appUser?.plan === 'free' ? 'Free Plan' : `${appUser?.plan || 'Free'} Plan`)
+    const credits = appLoading ? '–' : (appUser?.credits ?? 0)
 
     return (
         <div className='flex min-h-screen'>
@@ -35,13 +40,18 @@ const Layout = () => {
                 {/* User profile */}
                 <div className='flex flex-col items-center py-5'>
                     <img
-                        src={user?.imageUrl || assets.profile_img_1}
-                        alt={user?.fullName || 'User'}
+                        src={clerkUser?.imageUrl || assets.profile_img_1}
+                        alt={clerkUser?.fullName || 'User'}
                         className='w-16 h-16 rounded-full object-cover mb-2'
                     />
                     <p className='font-medium text-sm text-slate-700'>
-                        {user?.fullName || 'User'}
+                        {clerkUser?.fullName || 'User'}
                     </p>
+                    {/* Credits badge */}
+                    <div className='flex items-center gap-1.5 mt-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-200'>
+                        <Zap className='w-3.5 h-3.5 text-amber-500' />
+                        <span className='text-xs font-medium text-amber-700'>{credits} credits</span>
+                    </div>
                 </div>
 
                 {/* Navigation links */}
@@ -69,15 +79,15 @@ const Layout = () => {
                 <div className='px-5 py-4 border-t border-gray-100'>
                     <div className='flex items-center gap-3'>
                         <img
-                            src={user?.imageUrl || assets.profile_img_1}
+                            src={clerkUser?.imageUrl || assets.profile_img_1}
                             alt="user"
                             className='w-9 h-9 rounded-full object-cover'
                         />
                         <div className='flex-1 min-w-0'>
                             <p className='text-sm font-medium text-slate-700 truncate'>
-                                {user?.fullName || 'User'}
+                                {clerkUser?.fullName || 'User'}
                             </p>
-                            <p className='text-xs text-gray-400'>Premium Plan</p>
+                            <p className='text-xs text-gray-400 capitalize'>{planLabel}</p>
                         </div>
                         <button
                             onClick={() => signOut(() => navigate('/'))}

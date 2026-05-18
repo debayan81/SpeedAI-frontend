@@ -1,19 +1,34 @@
 import React, { useState } from 'react'
 import { Sparkles, FileText } from 'lucide-react'
+import { useAuth } from '@clerk/react'
+import { apiCall } from '../lib/api'
+import { useAppUser } from '../context/UserContext'
 
 const RemoveResume = () => {
     const [file, setFile] = useState(null)
     const [result, setResult] = useState('')
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const { getToken } = useAuth()
+    const { refreshUser } = useAppUser()
 
     const handleReview = async () => {
         if (!file) return
         setLoading(true)
-        // API call placeholder
-        setTimeout(() => {
-            setResult('Analysis complete!')
+        setError('')
+        setResult('')
+        try {
+            const token = await getToken()
+            const formData = new FormData()
+            formData.append('resume', file)
+            const data = await apiCall('/api/ai/resume', { method: 'POST', formData }, token)
+            setResult(data.review)
+            refreshUser()
+        } catch (err) {
+            setError(err.message)
+        } finally {
             setLoading(false)
-        }, 1000)
+        }
     }
 
     return (
@@ -32,7 +47,7 @@ const RemoveResume = () => {
                     <div className='border border-gray-200 rounded-lg overflow-hidden'>
                         <input
                             type='file'
-                            accept='.pdf,.png,.jpg,.jpeg'
+                            accept='.pdf,.txt,.doc,.docx'
                             onChange={(e) => setFile(e.target.files[0])}
                             className='w-full px-4 py-3 text-sm text-gray-500 file:mr-4 file:py-1 file:px-4
                             file:rounded-md file:border file:border-gray-200 file:text-sm file:font-medium
@@ -40,9 +55,19 @@ const RemoveResume = () => {
                         />
                     </div>
                     <p className='text-xs text-gray-400 mt-2'>
-                        Supports PDF, PNG, JPG formats
+                        Supports TXT, PDF, DOC, DOCX formats
                     </p>
                 </div>
+
+                {file && (
+                    <div className='mt-3 flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg'>
+                        <FileText className='w-4 h-4 text-gray-400' />
+                        <span className='text-sm text-gray-600 truncate'>{file.name}</span>
+                        <span className='text-xs text-gray-400 ml-auto'>
+                            {(file.size / 1024).toFixed(1)} KB
+                        </span>
+                    </div>
+                )}
 
                 <button
                     onClick={handleReview}
@@ -55,6 +80,10 @@ const RemoveResume = () => {
                     <FileText className='w-4 h-4' />
                     {loading ? 'Reviewing...' : 'Review Resume'}
                 </button>
+
+                {error && (
+                    <p className='mt-3 text-sm text-red-500 text-center'>{error}</p>
+                )}
             </div>
 
             {/* Right panel - Output */}

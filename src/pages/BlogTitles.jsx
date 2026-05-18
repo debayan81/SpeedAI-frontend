@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 import { Sparkles, Hash } from 'lucide-react'
+import { useAuth } from '@clerk/react'
+import { apiCall } from '../lib/api'
+import { useAppUser } from '../context/UserContext'
 
 const categories = ['General', 'Technology', 'Business', 'Health', 'Lifestyle', 'Education', 'Travel', 'Food']
 
@@ -8,15 +11,31 @@ const BlogTitles = () => {
     const [category, setCategory] = useState('General')
     const [result, setResult] = useState('')
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const { getToken } = useAuth()
+    const { refreshUser } = useAppUser()
 
     const handleGenerate = async () => {
         if (!keyword.trim()) return
         setLoading(true)
-        // API call placeholder
-        setTimeout(() => {
-            setResult('Generated titles will appear here...')
+        setError('')
+        setResult('')
+        try {
+            const token = await getToken()
+            const data = await apiCall('/api/ai/article', {
+                method: 'POST',
+                body: {
+                    topic: `Generate 10 creative and catchy blog title ideas for the keyword "${keyword}" in the category "${category}". Return only the titles as a numbered list.`,
+                    tone: 'creative'
+                }
+            }, token)
+            setResult(data.article)
+            refreshUser()
+        } catch (err) {
+            setError(err.message)
+        } finally {
             setLoading(false)
-        }, 1000)
+        }
     }
 
     return (
@@ -74,6 +93,10 @@ const BlogTitles = () => {
                     <Hash className='w-4 h-4' />
                     {loading ? 'Generating...' : 'Generate title'}
                 </button>
+
+                {error && (
+                    <p className='mt-3 text-sm text-red-500 text-center'>{error}</p>
+                )}
             </div>
 
             {/* Right panel - Output */}

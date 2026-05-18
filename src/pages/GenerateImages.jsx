@@ -1,22 +1,39 @@
 import React, { useState } from 'react'
 import { Sparkles, Image as ImageIcon } from 'lucide-react'
+import { useAuth } from '@clerk/react'
+import { apiCall } from '../lib/api'
+import { useAppUser } from '../context/UserContext'
 
-const styles = ['Realistic', 'Ghibli Style']
+const styles = ['realistic', 'anime', 'digital-art']
+const styleLabels = { 'realistic': 'Realistic', 'anime': 'Anime Style', 'digital-art': 'Digital Art' }
 
 const GenerateImages = () => {
     const [description, setDescription] = useState('')
-    const [style, setStyle] = useState('Realistic')
+    const [style, setStyle] = useState('realistic')
     const [result, setResult] = useState('')
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const { getToken } = useAuth()
+    const { refreshUser } = useAppUser()
 
     const handleGenerate = async () => {
         if (!description.trim()) return
         setLoading(true)
-        // API call placeholder
-        setTimeout(() => {
-            setResult('placeholder')
+        setError('')
+        setResult('')
+        try {
+            const token = await getToken()
+            const data = await apiCall('/api/ai/image', {
+                method: 'POST',
+                body: { prompt: description, style }
+            }, token)
+            setResult(data.imageUrl)
+            refreshUser()
+        } catch (err) {
+            setError(err.message)
+        } finally {
             setLoading(false)
-        }, 1000)
+        }
     }
 
     return (
@@ -57,7 +74,7 @@ const GenerateImages = () => {
                                         : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
                                     }`}
                             >
-                                {s}
+                                {styleLabels[s]}
                             </button>
                         ))}
                     </div>
@@ -74,6 +91,10 @@ const GenerateImages = () => {
                     <ImageIcon className='w-4 h-4' />
                     {loading ? 'Generating...' : 'Generate image'}
                 </button>
+
+                {error && (
+                    <p className='mt-3 text-sm text-red-500 text-center'>{error}</p>
+                )}
             </div>
 
             {/* Right panel - Output */}
@@ -85,9 +106,12 @@ const GenerateImages = () => {
 
                 <div className='mt-6 flex flex-col items-center justify-center min-h-[300px]'>
                     {result ? (
-                        <div className='text-center text-gray-400 text-sm'>
-                            {/* Image result would render here */}
-                            <p>Image generated successfully!</p>
+                        <div className='w-full'>
+                            <img
+                                src={result}
+                                alt='AI Generated'
+                                className='w-full rounded-lg shadow-sm'
+                            />
                         </div>
                     ) : (
                         <div className='text-center'>

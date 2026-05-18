@@ -11,6 +11,7 @@ import RemoveBackground from './pages/RemoveBackground'
 import RemoveObject from './pages/RemoveObject'
 import RemoveResume from './pages/RemoveResume'
 import Community from './pages/Community'
+import { UserProvider } from './context/UserContext'
 
 const ProtectedRoute = ({ children }) => {
   const { isSignedIn, isLoaded } = useAuth()
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
     return <RedirectToSignIn />
   }
 
-  return children
+  return <UserProvider>{children}</UserProvider>
 }
 
 const App = () => {

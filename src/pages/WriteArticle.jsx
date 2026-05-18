@@ -1,20 +1,36 @@
 import React, { useState } from 'react'
 import { Sparkles, SquarePen } from 'lucide-react'
+import { useAuth } from '@clerk/react'
+import { apiCall } from '../lib/api'
+import { useAppUser } from '../context/UserContext'
 
 const WriteArticle = () => {
     const [topic, setTopic] = useState('')
-    const [length, setLength] = useState('short')
+    const [tone, setTone] = useState('professional')
     const [result, setResult] = useState('')
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+    const { getToken } = useAuth()
+    const { refreshUser } = useAppUser()
 
     const handleGenerate = async () => {
         if (!topic.trim()) return
         setLoading(true)
-        // API call placeholder
-        setTimeout(() => {
-            setResult('Generated article will appear here...')
+        setError('')
+        setResult('')
+        try {
+            const token = await getToken()
+            const data = await apiCall('/api/ai/article', {
+                method: 'POST',
+                body: { topic, tone }
+            }, token)
+            setResult(data.article)
+            refreshUser()
+        } catch (err) {
+            setError(err.message)
+        } finally {
             setLoading(false)
-        }, 1000)
+        }
     }
 
     return (
@@ -42,29 +58,22 @@ const WriteArticle = () => {
 
                 <div className='mt-5'>
                     <label className='block text-sm font-medium text-slate-700 mb-2'>
-                        Article Length
+                        Tone
                     </label>
                     <div className='flex gap-3'>
-                        <button
-                            onClick={() => setLength('short')}
-                            className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer
-                            ${length === 'short'
-                                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                                    : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
-                                }`}
-                        >
-                            Short (200 - 400 word)
-                        </button>
-                        <button
-                            onClick={() => setLength('long')}
-                            className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer
-                            ${length === 'long'
-                                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                                    : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
-                                }`}
-                        >
-                            Long (400 - 800 word)
-                        </button>
+                        {['professional', 'casual', 'creative'].map((t) => (
+                            <button
+                                key={t}
+                                onClick={() => setTone(t)}
+                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer capitalize
+                                ${tone === t
+                                        ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                                        : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -79,6 +88,10 @@ const WriteArticle = () => {
                     <SquarePen className='w-4 h-4' />
                     {loading ? 'Generating...' : 'Generate article'}
                 </button>
+
+                {error && (
+                    <p className='mt-3 text-sm text-red-500 text-center'>{error}</p>
+                )}
             </div>
 
             {/* Right panel - Output */}
