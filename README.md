@@ -1,6 +1,7 @@
 # SpeedAI 🚀
 
 SpeedAI is a comprehensive full-stack Artificial Intelligence SaaS platform that provides users with a suite of powerful AI tools in a single, unified dashboard. From generating images to analyzing resumes and writing articles, SpeedAI is designed to be fast, reliable, and user-friendly.
+Backend - github.com/debayan81/SpeedAI-backend
 
 ## ✨ Features
 
